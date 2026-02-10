@@ -12,6 +12,7 @@ export default function CurriculosHeader({ mode, setMode }) {
 
   // Título e botão dinâmicos
   const title = mode === "list" ? "Meus Currículos" : "Criar novo currículo"
+  const subtitle = mode === "list" ? "" : "Crie um currículo personalizado e direcionado para uma vaga específica."
   const buttonText = mode === "list" ? "Criar novo currículo" : "Voltar"
 
   return (
@@ -30,13 +31,21 @@ export default function CurriculosHeader({ mode, setMode }) {
     >
       <div className="max-w-7xl mx-auto px-6 py-28 flex flex-col md:flex-row items-center justify-between gap-6">
 
-        {/* Título grande e chamativo */}
-        <h1 className={`text-4xl md:text-6xl font-bold text-white text-center md:text-left
+        <div>
+          {/* Título */}
+          <h1 className={`text-4xl md:text-6xl font-bold text-white text-center md:text-left
                          ${mode === "create" ? "drop-shadow-lg" : ""}`}>
-          {title}
-        </h1>
+            {title}
 
-        {/* Botão com gradiente e animação */}
+          </h1>
+
+          {/* Subtítulo */}
+          <h4 className="text-xl md:text-xl text-white text-center md:text-left pl-2">
+            {subtitle}
+          </h4>
+        </div>
+
+        {/* Botão */}
         <button
           onClick={() => setMode(mode === "list" ? "create" : "list")}
           className={`
@@ -44,7 +53,7 @@ export default function CurriculosHeader({ mode, setMode }) {
             font-medium shadow-lg
             transition-transform duration-200
             hover:scale-105 cursor-pointer
-            ${mode === "list" 
+            ${mode === "list"
               ? "bg-white text-black hover:opacity-90"
               : "bg-white text-black hover:bg-gray-200"
             }
