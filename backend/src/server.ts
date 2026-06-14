@@ -15,13 +15,19 @@ export function buildServer() {
   const app = Fastify({ logger: true })
 
   // CORS — libera o frontend local (Vite).
-  app.register(cors, {
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-  ],
+app.register(cors, {
+  origin: (origin, callback) => {
+    if (
+      !origin ||
+      origin.includes("localhost") ||
+      origin.includes("vercel.app")
+    ) {
+      callback(null, true)
+      return
+    }
+
+    callback(new Error("Not allowed by CORS"), false)
+  },
 })
 
   // Tratamento de erros consistente.
