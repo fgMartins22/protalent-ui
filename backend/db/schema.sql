@@ -33,6 +33,10 @@ do $$ begin
   create type payment_status as enum ('pending', 'paid', 'failed', 'canceled', 'expired');
 exception when duplicate_object then null; end $$;
 
+do $$ begin
+  create type subscription_status as enum ('active', 'past_due', 'canceled', 'expired', 'pending');
+exception when duplicate_object then null; end $$;
+
 -- ---------------------------------------------------------------------
 -- profiles
 -- Dados base do usuário (reutilizados para gerar currículos).
@@ -141,6 +145,25 @@ create table if not exists payments (
   updated_at                timestamptz not null default now()
 );
 create index if not exists idx_payments_profile on payments(profile_id);
+
+-- ---------------------------------------------------------------------
+-- subscriptions
+-- Assinaturas recorrentes (cartão). Status sincronizado pela Vindi (webhook).
+-- ---------------------------------------------------------------------
+create table if not exists subscriptions (
+  id                        uuid primary key default gen_random_uuid(),
+  profile_id                uuid not null references profiles(id) on delete cascade,
+  provider                  text not null default 'vindi',
+  provider_subscription_id  text,
+  plan                      text not null,
+  status                    subscription_status not null default 'pending',
+  current_period_start      timestamptz,
+  current_period_end        timestamptz,
+  canceled_at               timestamptz,
+  created_at                timestamptz not null default now(),
+  updated_at                timestamptz not null default now()
+);
+create index if not exists idx_subscriptions_profile on subscriptions(profile_id);
 
 -- =====================================================================
 -- Próximos passos (futuro, fora desta fase):

@@ -1,34 +1,34 @@
 import type { FastifyInstance } from "fastify"
+import { resumesService } from "../services/resumes.service"
 
-/**
- * Rotas de currículos (STUBS).
- * Lógica real (auth + Supabase) será implementada nas próximas fases.
- */
+type IdParams = { id: string }
+type ProfileParams = { profileId: string }
+
 export async function resumeRoutes(app: FastifyInstance) {
-  app.get("/", async () => ({ stub: true, route: "GET /resumes", data: [] }))
+  app.get("/profiles/:profileId/resumes", async (request) => {
+    const { profileId } = request.params as ProfileParams
+    return resumesService.listByProfile(profileId)
+  })
 
-  app.post("/", async (request) => ({
-    stub: true,
-    route: "POST /resumes",
-    received: request.body ?? null,
-  }))
+  app.post("/profiles/:profileId/resumes", async (request, reply) => {
+    const { profileId } = request.params as ProfileParams
+    const created = await resumesService.create(profileId, request.body)
+    return reply.code(201).send(created)
+  })
 
-  app.get("/:id", async (request) => ({
-    stub: true,
-    route: "GET /resumes/:id",
-    params: request.params,
-  }))
+  app.get("/resumes/:id", async (request) => {
+    const { id } = request.params as IdParams
+    return resumesService.getById(id)
+  })
 
-  app.put("/:id", async (request) => ({
-    stub: true,
-    route: "PUT /resumes/:id",
-    params: request.params,
-    received: request.body ?? null,
-  }))
+  app.put("/resumes/:id", async (request) => {
+    const { id } = request.params as IdParams
+    return resumesService.update(id, request.body)
+  })
 
-  app.delete("/:id", async (request) => ({
-    stub: true,
-    route: "DELETE /resumes/:id",
-    params: request.params,
-  }))
+  app.delete("/resumes/:id", async (request, reply) => {
+    const { id } = request.params as IdParams
+    await resumesService.remove(id)
+    return reply.code(204).send()
+  })
 }

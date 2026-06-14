@@ -41,12 +41,20 @@ PostgreSQL (Supabase). Proposta para revisão. O SQL executável está em
 (`pending|paid|failed|canceled|expired`), `amount`, `starts_at`, `expires_at`,
 `created_at`, `updated_at`.
 
+### subscriptions
+Assinaturas recorrentes (cartão), com status sincronizado pela Vindi via webhook.
+`id`, `profile_id` (FK), `provider` (`vindi`), `provider_subscription_id`,
+`plan`, `status` (`active|past_due|canceled|expired|pending`),
+`current_period_start`, `current_period_end`, `canceled_at`,
+`created_at`, `updated_at`.
+
 ## Relacionamentos
 - `profiles 1—N professional_experiences`
 - `profiles 1—N educations`
 - `profiles 1—N skills`
 - `profiles 1—N resumes`
 - `profiles 1—N payments`
+- `profiles 1—N subscriptions`
 
 Todas as FKs usam `on delete cascade`.
 
