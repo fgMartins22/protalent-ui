@@ -5,8 +5,9 @@ const optionalText = z.string().trim().optional()
 
 const createSchema = z.object({
   first_name: z.string().trim().min(1, "Nome é obrigatório"),
-  last_name: z.string().trim().min(1, "Sobrenome é obrigatório"),
+  last_name: optionalText,
   email: z.string().trim().email("E-mail inválido"),
+  auth_user_id: z.string().uuid().optional(),
   title: optionalText,
   city: optionalText,
   state: optionalText,
@@ -24,6 +25,10 @@ export const profilesService = {
   create(input: unknown) {
     const data = createSchema.parse(input)
     return profilesRepo.create(data)
+  },
+
+  getByAuthUserId(authUserId: string) {
+    return profilesRepo.getByAuthUserId(authUserId)
   },
 
   getById(id: string) {

@@ -1,17 +1,23 @@
 import { NavLink, useNavigate } from "react-router-dom"
-import { User } from "lucide-react"
+import { User, LogOut } from "lucide-react"
+import { useAuth } from "../contexts/AuthContext"
 
 const linkClass = ({ isActive }) =>
   `transition hover:text-black ${isActive ? "text-black" : "text-gray-600"}`
 
 export default function Header() {
   const navigate = useNavigate()
+  const { signOut } = useAuth()
+
+  async function handleLogout() {
+    await signOut()
+    navigate("/login")
+  }
 
   return (
     <header className="w-full border-b border-slate-200 bg-white">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
-        {/* Logo */}
         <h1
           className="text-xl font-bold text-gray-900 cursor-pointer"
           onClick={() => navigate("/home")}
@@ -19,14 +25,12 @@ export default function Header() {
           Pro<span className="text-purple-600">Talent</span>
         </h1>
 
-        {/* Menu */}
         <nav className="hidden md:flex gap-6 font-medium">
           <NavLink to="/home" className={linkClass}>Início</NavLink>
           <NavLink to="/curriculos" className={linkClass}>Meus Currículos</NavLink>
           <NavLink to="/premium" className={linkClass}>Premium</NavLink>
         </nav>
 
-        {/* Ações */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate("/perfil")}
@@ -37,10 +41,11 @@ export default function Header() {
           </button>
 
           <button
-            className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition cursor-pointer"
-            onClick={() => navigate("/curriculos")}
+            onClick={handleLogout}
+            className="inline-flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition cursor-pointer"
           >
-            Começar
+            <LogOut size={16} />
+            Sair
           </button>
         </div>
 

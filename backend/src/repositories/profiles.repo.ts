@@ -11,8 +11,23 @@ export const profilesRepo = {
       .insert(data)
       .select()
       .single()
-    if (error) throw new HttpError(400, error.message)
+    if (error) {
+      if (error.code === "23505") {
+        throw new HttpError(409, "Já existe um perfil para este usuário.")
+      }
+      throw new HttpError(400, error.message)
+    }
     return row as Profile
+  },
+
+  async getByAuthUserId(authUserId: string): Promise<Profile | null> {
+    const { data, error } = await getSupabase()
+      .from(TABLE)
+      .select("*")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle()
+    if (error) throw new HttpError(400, error.message)
+    return (data as Profile) ?? null
   },
 
   async getById(id: string): Promise<Profile> {

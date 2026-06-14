@@ -25,6 +25,7 @@ const json = (body) => JSON.stringify(body)
 
 // ---- Profiles ----
 export const getProfile = (id) => request(`/profiles/${id}`)
+export const getProfileByAuth = (authUserId) => request(`/profiles/by-auth/${authUserId}`)
 export const createProfile = (body) => request(`/profiles`, { method: "POST", body: json(body) })
 export const updateProfile = (id, body) => request(`/profiles/${id}`, { method: "PUT", body: json(body) })
 
@@ -56,8 +57,8 @@ export const getResume = (id) => request(`/resumes/${id}`)
 export const updateResume = (id, body) => request(`/resumes/${id}`, { method: "PUT", body: json(body) })
 export const deleteResume = (id) => request(`/resumes/${id}`, { method: "DELETE" })
 
-// ---- Profile id local (substituído por Auth futuramente) ----
-const PROFILE_ID_KEY = "protalent_profile_id"
-export const getStoredProfileId = () => localStorage.getItem(PROFILE_ID_KEY)
-export const setStoredProfileId = (id) => localStorage.setItem(PROFILE_ID_KEY, id)
-export const clearStoredProfileId = () => localStorage.removeItem(PROFILE_ID_KEY)
+// ---- Limpeza de chaves legadas (migração do localStorage para Auth real) ----
+export const clearLegacyKeys = () => {
+  localStorage.removeItem("protalent_profile_id")
+  localStorage.removeItem("profileId")
+}

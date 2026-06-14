@@ -5,49 +5,42 @@ import Curriculos from "../pages/Curriculos";
 import CurriculoView from "../pages/CurriculoView";
 import Buy from "../pages/Buy";
 import Login from "../pages/Login";
+import Cadastro from "../pages/Cadastro";
+import RecuperarSenha from "../pages/RecuperarSenha";
 import Perfil from "../pages/Perfil";
 import Premium from "../pages/Premium";
 import Linkedin from "../pages/Linkedin";
 import Carta from "../pages/Carta";
 import Consultoria from "../pages/Consultoria";
 import NotFound from "../pages/NotFound";
-import ParallaxTransition from "../components/ParallaxTransition";
+import { ProtectedRoute, PublicOnlyRoute } from "../components/ProtectedRoute";
 
 export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-
-        {/* LOGIN - primeira tela */}
-        <Route path="/login" element={<Login />} />
-
-        {/* Redireciona / para /login */}
-        <Route path="/transition" element={<ParallaxTransition />} />
+        {/* Raiz → login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* SITE PRINCIPAL */}
-        <Route path="/home" element={<App />} />
+        {/* Públicas (somente deslogado) */}
+        <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+        <Route path="/cadastro" element={<PublicOnlyRoute><Cadastro /></PublicOnlyRoute>} />
+        <Route path="/recuperar-senha" element={<PublicOnlyRoute><RecuperarSenha /></PublicOnlyRoute>} />
 
-        {/* CURRÍCULOS */}
-        <Route path="/curriculos" element={<Curriculos />} />
-        <Route path="/curriculos/:id" element={<CurriculoView />} />
+        {/* Privadas (exigem login) */}
+        <Route path="/home" element={<ProtectedRoute><App /></ProtectedRoute>} />
+        <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
+        <Route path="/curriculos" element={<ProtectedRoute><Curriculos /></ProtectedRoute>} />
+        <Route path="/curriculos/:id" element={<ProtectedRoute><CurriculoView /></ProtectedRoute>} />
+        <Route path="/premium" element={<ProtectedRoute><Premium /></ProtectedRoute>} />
+        <Route path="/buy" element={<ProtectedRoute><Buy /></ProtectedRoute>} />
+        <Route path="/linkedin" element={<ProtectedRoute><Linkedin /></ProtectedRoute>} />
+        <Route path="/carta" element={<ProtectedRoute><Carta /></ProtectedRoute>} />
+        <Route path="/consultoria" element={<ProtectedRoute><Consultoria /></ProtectedRoute>} />
+        <Route path="/consult" element={<ProtectedRoute><Consultoria /></ProtectedRoute>} />
 
-        {/* PERFIL */}
-        <Route path="/perfil" element={<Perfil />} />
-
-        {/* PREMIUM / COMPRA */}
-        <Route path="/premium" element={<Premium />} />
-        <Route path="/buy" element={<Buy />} />
-
-        {/* SERVIÇOS */}
-        <Route path="/linkedin" element={<Linkedin />} />
-        <Route path="/carta" element={<Carta />} />
-        <Route path="/consultoria" element={<Consultoria />} />
-        <Route path="/consult" element={<Consultoria />} />
-
-        {/* CATCH-ALL - página não encontrada */}
+        {/* Catch-all */}
         <Route path="*" element={<NotFound />} />
-
       </Routes>
     </BrowserRouter>
   );

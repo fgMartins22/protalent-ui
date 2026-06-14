@@ -9,6 +9,12 @@ export async function profileRoutes(app: FastifyInstance) {
     return reply.code(201).send(profile)
   })
 
+  // Busca o perfil vinculado a um usuário do Supabase Auth (ou null).
+  app.get("/profiles/by-auth/:authUserId", async (request) => {
+    const { authUserId } = request.params as { authUserId: string }
+    return profilesService.getByAuthUserId(authUserId)
+  })
+
   app.get("/profiles/:id", async (request) => {
     const { id } = request.params as IdParams
     return profilesService.getById(id)
