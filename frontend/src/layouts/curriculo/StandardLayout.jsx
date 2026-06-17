@@ -1,13 +1,13 @@
 const emptyText = "text-sm text-slate-400 italic"
 
-export default function StandardLayout({ data, editing, onChange }) {
+export default function StandardLayout({ data, editing, onChange, exportMode = false }) {
   const p = data.person
   const local = [p.city, p.state].filter(Boolean).join(" - ")
   const headerLine = [p.title, local].filter(Boolean).join(" • ")
   const contact = [p.email, p.phone].filter(Boolean).join(" • ")
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl shadow-sm p-8 space-y-8">
+    <section className={`${exportMode ? "bg-white" : "bg-white border border-slate-200 rounded-xl shadow-sm"} p-8 space-y-8`}>
 
       {/* Cabeçalho */}
       <div className="space-y-1">

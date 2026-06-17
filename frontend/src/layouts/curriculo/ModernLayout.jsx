@@ -2,14 +2,14 @@ import { Mail, Pin, Link as LinkIcon } from "lucide-react"
 
 const emptyText = "text-sm text-slate-400 italic"
 
-export default function ModernLayout({ data, editing, onChange }) {
+export default function ModernLayout({ data, editing, onChange, exportMode = false }) {
   const p = data.person
   const initials = p.name ? p.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() : "FOTO"
   const location = [p.city, p.state].filter(Boolean).join(", ")
   const links = [p.linkedin, p.github, p.portfolio].filter(Boolean)
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-[280px_1fr]">
+    <section className={`${exportMode ? "bg-white" : "bg-white border border-slate-200 rounded-xl shadow-sm"} overflow-hidden grid grid-cols-1 md:grid-cols-[280px_1fr]`}>
 
       {/* Faixa lateral */}
       <aside className="bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100 p-6 space-y-8">
