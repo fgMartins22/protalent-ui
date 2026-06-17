@@ -6,6 +6,8 @@ import {
 
 import Toast from "../components/Toast"
 import { listResumes, createResume, deleteResume } from "../services/api"
+import { loadResumeView } from "../services/resumeData"
+import { exportResumePdf } from "../services/exportResume"
 
 const PAGE_SIZE = 5
 
@@ -41,6 +43,7 @@ export default function CurriculosList({ profileId }) {
   const [page, setPage] = useState(1)
   const [toast, setToast] = useState(null)
   const [confirmId, setConfirmId] = useState(null)
+  const [exportingId, setExportingId] = useState(null)
 
   const closeToast = useCallback(() => setToast(null), [])
 
@@ -88,6 +91,21 @@ export default function CurriculosList({ profileId }) {
       setItems((prev) => [copy, ...prev])
       setToast("Currículo duplicado")
     } catch (err) { setToast(err.message) }
+  }
+
+  async function handleExport(c) {
+    if (exportingId) return
+    setExportingId(c.id)
+    try {
+      const { resume, data } = await loadResumeView(c.id)
+      await exportResumePdf(resume.layout, data, resume.name)
+      setToast("Exportação concluída")
+    } catch (err) {
+      console.error("Erro ao exportar currículo:", err)
+      setToast("Erro ao exportar o PDF")
+    } finally {
+      setExportingId(null)
+    }
   }
 
   async function confirmDelete() {
@@ -215,8 +233,8 @@ export default function CurriculosList({ profileId }) {
                 <td className="p-4 text-slate-500 text-sm">{formatDate(c.updated_at)}</td>
                 <td className="p-4 text-right">
                   <div className="flex justify-end gap-2">
-                    <button onClick={() => setToast("Download do PDF iniciado (simulado)")} title="Baixar PDF" className="p-2 rounded-lg hover:bg-blue-100 text-slate-600 hover:text-blue-900 cursor-pointer">
-                      <Download size={18} />
+                    <button onClick={() => handleExport(c)} disabled={exportingId === c.id} title="Exportar PDF" className="p-2 rounded-lg hover:bg-blue-100 text-slate-600 hover:text-blue-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                      {exportingId === c.id ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
                     </button>
                     <button onClick={() => handleDuplicate(c)} title="Duplicar" className="p-2 rounded-lg hover:bg-slate-200 text-slate-600 cursor-pointer">
                       <Copy size={18} />

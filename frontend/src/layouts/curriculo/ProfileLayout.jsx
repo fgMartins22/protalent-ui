@@ -1,13 +1,13 @@
 const emptyText = "text-sm text-slate-400 italic"
 
-export default function ProfileLayout({ data, editing, onChange }) {
+export default function ProfileLayout({ data, editing, onChange, exportMode = false }) {
   const p = data.person
   const initials = p.name ? p.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() : "FOTO"
   const sub = [p.city, p.state].filter(Boolean).join(" • ")
   const line = [sub, p.email].filter(Boolean).join(" · ")
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+    <section className={`${exportMode ? "bg-white" : "bg-white border border-slate-200 rounded-xl shadow-sm"} overflow-hidden`}>
 
       {/* Header com foto */}
       <header className="flex items-center gap-6 p-8 bg-gradient-to-r from-slate-50 to-white">

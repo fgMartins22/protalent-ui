@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowBigDownDash, Loader2, ArrowLeft } from "lucide-react"
+import { Download, Loader2, ArrowLeft } from "lucide-react"
 
 import Header from "../components/Header"
 import Footer from "../components/Footer"
@@ -12,6 +12,7 @@ import ModernLayout from "../layouts/curriculo/ModernLayout"
 
 import { updateResume } from "../services/api"
 import { loadResumeView } from "../services/resumeData"
+import { exportResumePdf } from "../services/exportResume"
 
 const LAYOUTS = [
   { id: "standard", label: "Padrão", recommended: true, component: StandardLayout },
@@ -28,11 +29,13 @@ export default function CurriculoView() {
   const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState(false)
   const [toast, setToast] = useState(null)
+  const [exporting, setExporting] = useState(false)
   const closeToast = useCallback(() => setToast(null), [])
 
   const [activeLayout, setActiveLayout] = useState(LAYOUTS[0])
   const [savedLayout, setSavedLayout] = useState(LAYOUTS[0])
   const [data, setData] = useState(null)
+  const [resumeName, setResumeName] = useState("")
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -43,6 +46,7 @@ export default function CurriculoView() {
       setActiveLayout(layout)
       setSavedLayout(layout)
       setData(built)
+      setResumeName(resume.name)
     } catch (err) {
       setLoadError(err.message || "Falha ao carregar o currículo")
     } finally {
@@ -76,6 +80,20 @@ export default function CurriculoView() {
       setToast(err.message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleExportPdf() {
+    if (exporting) return
+    setExporting(true)
+    try {
+      await exportResumePdf(activeLayout.id, data, resumeName)
+      setToast("Exportação concluída")
+    } catch (err) {
+      console.error("Erro ao exportar currículo:", err)
+      setToast("Erro ao exportar o PDF")
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -128,8 +146,9 @@ export default function CurriculoView() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button onClick={() => setToast("Download do PDF iniciado (simulado)")} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-black text-black hover:bg-black hover:text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer">
-              <ArrowBigDownDash size={18} /> Download PDF
+            <button onClick={handleExportPdf} disabled={exporting} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-black text-black hover:bg-black hover:text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+              {exporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+              {exporting ? "Exportando…" : "Exportar PDF"}
             </button>
             <button onClick={() => setEditing((p) => !p)} className="px-4 py-2 font-medium text-sm rounded-lg border border-black hover:bg-black hover:text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer">
               {editing ? "Cancelar edição" : "Editar"}
@@ -146,7 +165,9 @@ export default function CurriculoView() {
           </div>
         </div>
 
-        <ActiveLayoutComponent data={data} editing={editing} onChange={handleChange} />
+        <div className="bg-slate-50">
+          <ActiveLayoutComponent data={data} editing={editing} onChange={handleChange} />
+        </div>
       </div>
       <Footer />
       <Toast message={toast} onClose={closeToast} />

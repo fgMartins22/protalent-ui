@@ -1,6 +1,5 @@
 -- =====================================================================
 -- ProTalent — Modelagem inicial do banco (PostgreSQL / Supabase)
--- Proposta para revisão. NÃO aplicar ainda se exigir credenciais reais.
 -- =====================================================================
 
 -- Extensão para gen_random_uuid()
@@ -60,8 +59,12 @@ create table if not exists profiles (
   updated_at    timestamptz not null default now()
 );
 
+create index if not exists idx_profiles_auth_user_id on profiles(auth_user_id);
+
 -- ---------------------------------------------------------------------
--- professional_experiences (sem descrição — ela é customizada por currículo)
+-- professional_experiences
+-- Experiências profissionais base.
+-- Sem descrição: a descrição será customizada em cada currículo.
 -- ---------------------------------------------------------------------
 create table if not exists professional_experiences (
   id          uuid primary key default gen_random_uuid(),
@@ -74,10 +77,13 @@ create table if not exists professional_experiences (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+
 create index if not exists idx_experiences_profile on professional_experiences(profile_id);
 
 -- ---------------------------------------------------------------------
--- educations (sem descrição — customizada por currículo)
+-- educations
+-- Formações base.
+-- Sem descrição: a descrição será customizada em cada currículo.
 -- ---------------------------------------------------------------------
 create table if not exists educations (
   id           uuid primary key default gen_random_uuid(),
@@ -90,23 +96,28 @@ create table if not exists educations (
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
+
 create index if not exists idx_educations_profile on educations(profile_id);
 
 -- ---------------------------------------------------------------------
 -- skills
+-- Competências base do perfil.
 -- ---------------------------------------------------------------------
 create table if not exists skills (
   id          uuid primary key default gen_random_uuid(),
   profile_id  uuid not null references profiles(id) on delete cascade,
   name        text not null,
   created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
   unique (profile_id, name)
 );
+
 create index if not exists idx_skills_profile on skills(profile_id);
 
 -- ---------------------------------------------------------------------
 -- resumes
--- Currículos. As descrições customizadas ficam aqui (não no perfil).
+-- Currículos.
+-- As descrições customizadas ficam aqui, não no perfil.
 -- ---------------------------------------------------------------------
 create table if not exists resumes (
   id                      uuid primary key default gen_random_uuid(),
@@ -117,16 +128,17 @@ create table if not exists resumes (
   output_type             resume_output_type not null default 'text',
   professional_summary    text,
   experience_description  text,
-  education_description    text,
+  education_description   text,
   status                  resume_status not null default 'draft',
   created_at              timestamptz not null default now(),
   updated_at              timestamptz not null default now()
 );
+
 create index if not exists idx_resumes_profile on resumes(profile_id);
 
 -- ---------------------------------------------------------------------
 -- payments
--- Reflete o status retornado pela Vindi (atualizado via webhook no backend).
+-- Reflete o status retornado pela Vindi, atualizado via webhook no backend.
 -- ---------------------------------------------------------------------
 create table if not exists payments (
   id                        uuid primary key default gen_random_uuid(),
@@ -144,11 +156,13 @@ create table if not exists payments (
   created_at                timestamptz not null default now(),
   updated_at                timestamptz not null default now()
 );
+
 create index if not exists idx_payments_profile on payments(profile_id);
 
 -- ---------------------------------------------------------------------
 -- subscriptions
--- Assinaturas recorrentes (cartão). Status sincronizado pela Vindi (webhook).
+-- Assinaturas recorrentes via cartão.
+-- Status sincronizado pela Vindi via webhook.
 -- ---------------------------------------------------------------------
 create table if not exists subscriptions (
   id                        uuid primary key default gen_random_uuid(),
@@ -163,11 +177,60 @@ create table if not exists subscriptions (
   created_at                timestamptz not null default now(),
   updated_at                timestamptz not null default now()
 );
+
 create index if not exists idx_subscriptions_profile on subscriptions(profile_id);
 
+-- ---------------------------------------------------------------------
+-- Trigger para atualizar updated_at automaticamente
+-- ---------------------------------------------------------------------
+create or replace function set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists trg_profiles_updated_at on profiles;
+create trigger trg_profiles_updated_at
+before update on profiles
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_professional_experiences_updated_at on professional_experiences;
+create trigger trg_professional_experiences_updated_at
+before update on professional_experiences
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_educations_updated_at on educations;
+create trigger trg_educations_updated_at
+before update on educations
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_skills_updated_at on skills;
+create trigger trg_skills_updated_at
+before update on skills
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_resumes_updated_at on resumes;
+create trigger trg_resumes_updated_at
+before update on resumes
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_payments_updated_at on payments;
+create trigger trg_payments_updated_at
+before update on payments
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_subscriptions_updated_at on subscriptions;
+create trigger trg_subscriptions_updated_at
+before update on subscriptions
+for each row execute function set_updated_at();
+
 -- =====================================================================
--- Próximos passos (futuro, fora desta fase):
+-- Próximos passos:
 --  - Habilitar RLS (Row Level Security) em todas as tabelas.
---  - Policies por auth.uid() = profiles.auth_user_id.
---  - Trigger para manter updated_at.
+--  - Criar policies por auth.uid() = profiles.auth_user_id.
+--  - Criar bucket de Storage para avatars.
+--  - Criar endpoints reais no backend para profiles, experiences,
+--    educations, skills e resumes.
 -- =====================================================================
