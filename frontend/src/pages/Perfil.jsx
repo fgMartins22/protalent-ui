@@ -7,12 +7,17 @@ import Header from "../components/Header"
 import Footer from "../components/Footer"
 import Toast from "../components/Toast"
 import { useAuth } from "../contexts/AuthContext"
+import { supabase } from "../lib/supabase"
 import {
   getProfile, updateProfile,
   listExperiences, createExperience, updateExperience, deleteExperience,
   listEducations, createEducation, updateEducation, deleteEducation,
   listSkills, createSkill, deleteSkill,
 } from "../services/api"
+
+const AVATAR_BUCKET = "avatars"
+const AVATAR_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024 // 2MB
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-700 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 disabled:bg-slate-50"
@@ -29,7 +34,7 @@ function Field({ label, ...props }) {
 }
 
 export default function Perfil() {
-  const { profile: authProfile, refreshProfile } = useAuth()
+  const { profile: authProfile, user, refreshProfile } = useAuth()
   const profileId = authProfile?.id ?? null
 
   const [profile, setProfile] = useState(null)
@@ -41,6 +46,7 @@ export default function Perfil() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [toast, setToast] = useState(null)
 
   const fileRef = useRef(null)
@@ -75,12 +81,58 @@ export default function Perfil() {
     setProfile((prev) => ({ ...prev, [key]: value }))
   }
 
-  function handleAvatar(e) {
+  async function handleAvatar(e) {
     const file = e.target.files?.[0]
+    e.target.value = "" // permite reenviar o mesmo arquivo
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setField("avatar", reader.result)
-    reader.readAsDataURL(file)
+
+    if (!AVATAR_TYPES.includes(file.type)) {
+      setToast("Formato inválido. Use JPG, PNG ou WEBP.")
+      return
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setToast("Imagem muito grande. O limite é 2MB.")
+      return
+    }
+    if (!user?.id) {
+      setToast("Sessão inválida. Faça login novamente.")
+      return
+    }
+
+    setUploadingAvatar(true)
+    try {
+      const ext = (file.name.split(".").pop() || "png").toLowerCase()
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`
+
+      const { error: upErr } = await supabase.storage
+        .from(AVATAR_BUCKET)
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (upErr) throw upErr
+
+      const { data: pub } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path)
+      const url = pub.publicUrl
+
+      // Persiste a URL no profile (via backend) e atualiza a tela imediatamente.
+      await updateProfile(profileId, { avatar_url: url })
+      setField("avatar", url)
+      await refreshProfile()
+
+      // Best-effort: remove fotos anteriores do usuário (evita acúmulo).
+      try {
+        const { data: list } = await supabase.storage.from(AVATAR_BUCKET).list(user.id)
+        const old = (list || [])
+          .map((f) => `${user.id}/${f.name}`)
+          .filter((pth) => pth !== path)
+        if (old.length) await supabase.storage.from(AVATAR_BUCKET).remove(old)
+      } catch { /* ignore cleanup errors */ }
+
+      setToast("Foto de perfil atualizada")
+    } catch (err) {
+      console.error("Erro ao enviar avatar:", err)
+      setToast("Não foi possível enviar a foto. Tente novamente.")
+    } finally {
+      setUploadingAvatar(false)
+    }
   }
 
   const expPayload = (e) => ({ role: e.role, company: e.company, start_date: e.start_date || null, end_date: e.end_date || null, current: e.current })
@@ -195,14 +247,19 @@ export default function Perfil() {
             </div>
             <div className="flex items-center gap-5">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xl font-semibold shrink-0">
-                {profile.avatar ? <img src={profile.avatar} alt="Foto do perfil" className="w-full h-full object-cover" /> : (initials || "FOTO")}
+                {profile.avatar ? <img src={profile.avatar} alt="Foto de perfil" className="w-full h-full object-cover" /> : (initials || "FOTO")}
               </div>
               <div className="space-y-2">
-                <input ref={fileRef} type="file" accept="image/*" onChange={handleAvatar} className="hidden" />
-                <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm hover:bg-slate-100 transition cursor-pointer">
-                  <Upload size={16} /> Enviar foto
+                <p className="text-sm font-medium text-slate-700">Foto de perfil</p>
+                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatar} className="hidden" />
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm hover:bg-slate-100 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {uploadingAvatar ? <><Loader2 size={16} className="animate-spin" /> Enviando…</> : <><Upload size={16} /> Alterar foto</>}
                 </button>
-                <p className="text-xs text-slate-400">PNG ou JPG. Apenas pré-visualização local.</p>
+                <p className="text-xs text-slate-400">JPG, PNG ou WEBP • até 2MB. Use uma imagem profissional.</p>
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">

@@ -132,6 +132,7 @@ function modernColumn(data) {
       <Page size="A4" style={{ fontFamily: "Helvetica", fontSize: 10, color: C.slate700, lineHeight: 1.45 }}>
         {/* Coluna lateral escura — repete em todas as páginas (altura total) */}
         <View fixed style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: SIDEBAR, backgroundColor: C.slate900, padding: 24, paddingTop: 36 }}>
+          {p.avatar ? <Image src={p.avatar} style={{ width: 72, height: 72, borderRadius: 36, marginBottom: 14 }} /> : null}
           <Text style={{ fontSize: 15, fontFamily: "Helvetica-Bold", color: C.white }}>{p.name || "Sem nome"}</Text>
           {p.title ? <Text style={{ fontSize: 9, color: "#cbd5e1", marginTop: 3 }}>{p.title}</Text> : null}
           <View style={{ marginTop: 16 }}>
